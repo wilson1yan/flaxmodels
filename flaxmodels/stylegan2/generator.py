@@ -180,6 +180,7 @@ class MappingNetwork(nn.Module):
         # Update moving average of W.
         if self.w_avg_beta is not None and train and not skip_w_avg_update:
             self.w_avg.value = self.w_avg_beta * self.w_avg.value + (1 - self.w_avg_beta) * jnp.mean(x, axis=0)
+            self.w_avg.value = jax.lax.pmean(self.w_avg.value, 'batch')
 
         # Broadcast.
         if self.num_ws is not None:

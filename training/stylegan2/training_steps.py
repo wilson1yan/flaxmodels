@@ -95,6 +95,7 @@ def regul_step_G(state_G, batch, z_latent, pl_noise, pl_mean, metrics, config, r
 
     loss = aux[0]
     pl_mean_new = aux[1]
+    pl_mean_new = jax.lax.pmean(pl_mean_new, 'batch')
 
     metrics['G_regul_loss'] = loss
     new_state_G = state_G.apply_gradients(grads=grads)

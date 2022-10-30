@@ -86,7 +86,8 @@ def train_and_evaluate(config):
     rng, init_rng = jax.random.split(rng)
     mapping_net_vars = mapping_net.init(init_rng,
                                         jnp.ones((1, config.z_dim)),
-                                        jnp.ones((1, config.c_dim)))
+                                        jnp.ones((1, config.c_dim)),
+                                        skip_w_avg_update=True)
 
     mapping_net_params, moving_stats = mapping_net_vars['params'], mapping_net_vars['moving_stats']
 
@@ -126,7 +127,8 @@ def train_and_evaluate(config):
 
     params_ema_G = generator_ema.init(init_rng,
                                       jnp.ones((1, config.z_dim)),
-                                      jnp.ones((1, config.c_dim)))
+                                      jnp.ones((1, config.c_dim)),
+                                      skip_w_avg_update=True)
 
 
     #--------------------------------------
@@ -236,7 +238,7 @@ def train_and_evaluate(config):
             #--------------------------------------
             state_G, metrics = p_main_step_G(state_G, state_D, batch, z_latent1, z_latent2, metrics, mixing_prob, rkey)
             if step % config.G_reg_interval == 0:
-                H, W = batch['image'].shape[1], batch['image'].shape[2]
+                H, W = batch['image'].shape[2], batch['image'].shape[3]
                 rng, key = jax.random.split(rng)
                 pl_noise = jax.random.normal(key, batch['image'].shape, dtype=dtype) / np.sqrt(H * W)
                 state_G, metrics, pl_mean = p_regul_step_G(state_G, batch, z_latent1, pl_noise, pl_mean, metrics, rng=rkey)
@@ -281,10 +283,10 @@ def train_and_evaluate(config):
             step += 1
         
         # Sync moving stats across devices
-        state_G = training_utils.sync_moving_stats(state_G)
+#        state_G = training_utils.sync_moving_stats(state_G)
         
         # Sync moving average of path length mean (Generator regularization)
-        pl_mean = jax.pmap(lambda x: jax.lax.pmean(x, axis_name='batch'), axis_name='batch')(pl_mean)
+#        pl_mean = jax.pmap(lambda x: jax.lax.pmean(x, axis_name='batch'), axis_name='batch')(pl_mean)
         
         # Generate evaluation images after epoch
         if config.wandb:
