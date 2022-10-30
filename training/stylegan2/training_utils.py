@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 from jaxlib.xla_extension import DeviceArray
 import flax
-from flax.optim import dynamic_scale as dynamic_scale_lib
+from flax.training import dynamic_scale as dynamic_scale_lib
 from flax.core import frozen_dict
 from flax.training import train_state
 from flax import struct

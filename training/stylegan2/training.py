@@ -3,7 +3,7 @@ import tensorflow_datasets as tfds
 import jax
 import jax.numpy as jnp
 import flax
-from flax.optim import dynamic_scale as dynamic_scale_lib
+from flax.training import dynamic_scale as dynamic_scale_lib
 from flax.core import frozen_dict
 import optax
 import numpy as np
