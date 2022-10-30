@@ -1,3 +1,5 @@
+import os
+import os.path as osp
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import jax
@@ -37,42 +39,23 @@ def get_data(data_dir, img_size, img_channels, num_classes, num_devices, batch_s
         (tf.data.Dataset): Dataset.
     """
 
-    def pre_process(serialized_example):
-        feature = {'height': tf.io.FixedLenFeature([], tf.int64),
-                   'width': tf.io.FixedLenFeature([], tf.int64),
-                   'channels': tf.io.FixedLenFeature([], tf.int64),
-                   'image': tf.io.FixedLenFeature([], tf.string),
-                   'label': tf.io.FixedLenFeature([], tf.int64)}
-        example = tf.io.parse_single_example(serialized_example, feature)
-
-        height = tf.cast(example['height'], dtype=tf.int64)
-        width = tf.cast(example['width'], dtype=tf.int64)
-        channels = tf.cast(example['channels'], dtype=tf.int64)
-
-        image = tf.io.decode_raw(example['image'], out_type=tf.uint8)
-        image = tf.reshape(image, shape=[height, width, channels])
-
+    def pre_process(features):
+        image = features['image']
         image = tf.cast(image, dtype='float32')
-        image = tf.image.resize(image, size=[img_size, img_size], method='bicubic', antialias=True)
+        # image = tf.image.resize(image, size=[img_size, img_size], method='bicubic', antialias=True)
         image = tf.image.random_flip_left_right(image)
-        
         image = (image - 127.5) / 127.5
-        
-        label = tf.one_hot(example['label'], num_classes)
-        return {'image': image, 'label': label}
+        return {'image': image}
 
     def shard(data):
         # Reshape images from [num_devices * batch_size, H, W, C] to [num_devices, batch_size, H, W, C]
         # because the first dimension will be mapped across devices using jax.pmap
         data['image'] = tf.reshape(data['image'], [num_devices, -1, img_size, img_size, img_channels])
-        data['label'] = tf.reshape(data['label'], [num_devices, -1, num_classes])
         return data
 
-    print('Loading TFRecord...')
-    with open(os.path.join(data_dir, 'dataset_info.json'), 'r') as fin:
-        dataset_info = json.load(fin)
-
-    ds = tf.data.TFRecordDataset(filenames=os.path.join(data_dir, 'dataset.tfrecords'))
+    dataset_info = {'num_examples': 70000}
+    split = tfds.split_for_jax_process('train')
+    ds = tfds.load(osp.basename(data_dir), split=split, data_dir=osp.dirname(data_dir))
     
     ds = ds.shuffle(min(dataset_info['num_examples'], shuffle_buffer))
     ds = ds.map(pre_process, tf.data.AUTOTUNE)

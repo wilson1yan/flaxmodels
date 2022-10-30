@@ -9,9 +9,9 @@ def main():
     parser = argparse.ArgumentParser()
     # Paths
     parser.add_argument('--work_dir', type=str, default='logging', help='Directory for logging and checkpoints.')
-    parser.add_argument('--data_dir', type=str, help='Directory of the dataset.')
+    parser.add_argument('--data_dir', type=str, help='Directory of the dataset.', default='/home/wilson/data/ffhq')
     parser.add_argument('--project', type=str, default='stylegan', help='Name of this project.')
-    parser.add_argument('--name', type=str, default='test', help='Name of this experiment.')
+    parser.add_argument('--name', type=str, default='ffhq_stylegan', help='Name of this experiment.')
     parser.add_argument('--group', type=str, default='default', help='Group name of this experiment (for Weights&Biases).')
     # Training
     parser.add_argument('--resume', action='store_true', help='Resume training from latest checkpoint.')
